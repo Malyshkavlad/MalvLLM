@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование профиля</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .preview-photo {
+            width: 200px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 50%;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Сервисный центр</a>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employee">Назад к профилю</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Выйти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container mt-4">
+        <h2 class="mb-4">Редактирование профиля</h2>
+        
+        <form id="editForm" class="row">
+            <div class="col-md-4 text-center">
+                <img id="photoPreview" src="https://via.placeholder.com/200" class="preview-photo" alt="Фото сотрудника">
+                <div class="mb-3">
+                    <label for="photoInput" class="form-label">Изменить фото</label>
+                    <input type="file" class="form-control" id="photoInput" accept="image/*">
+                </div>
+            </div>
+            
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label for="name" class="form-label">ФИО</label>
+                    <input type="text" class="form-control" id="name" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="age" class="form-label">Возраст</label>
+                    <input type="number" class="form-control" id="age" min="18" max="100" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="experience" class="form-label">Опыт работы (лет)</label>
+                    <input type="number" class="form-control" id="experience" min="0" max="60" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="phonenumber" class="form-label">Телефон</label>
+                    <input type="tel" class="form-control" id="phonenumber" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="login" class="form-label">Логин</label>
+                    <input type="text" class="form-control" id="login" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label">Новый пароль (оставьте пустым, если не хотите менять)</label>
+                    <input type="password" class="form-control" id="password">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Проверка авторизации
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || currentUser.role !== 2) {
+                window.location.href = '/';
+                return;
+            }
+            loadEmployeeData(currentUser.id);
+        });
+
+        // Загрузка данных сотрудника
+        async function loadEmployeeData(employeeId) {
+            try {
+                const response = await fetch(`/api/employees/${employeeId}`);
+                const employee = await response.json();
+
+                // Заполняем форму
+                document.getElementById('name').value = employee.name;
+                document.getElementById('age').value = employee.age;
+                document.getElementById('experience').value = employee.experience;
+                document.getElementById('phonenumber').value = employee.phonenumber;
+                document.getElementById('login').value = employee.login;
+
+                // Показываем фото
+                if (employee.photoavatar) {
+                    document.getElementById('photoPreview').src = 'data:image/jpeg;base64,' + employee.photoavatar;
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+            }
+        }
+
+        // Предпросмотр фото
+        document.getElementById('photoInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Обработка формы
+        document.getElementById('editForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            try {
+                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                
+                // Получаем и валидируем значения
+                const age = parseInt(document.getElementById('age').value);
+                const experience = parseInt(document.getElementById('experience').value);
+
+                // Проверяем корректность числовых значений
+                if (isNaN(age) || age <= 0) {
+                    throw new Error('Возраст должен быть положительным числом');
+                }
+                if (isNaN(experience) || experience < 0) {
+                    throw new Error('Опыт работы должен быть неотрицательным числом');
+                }
+
+                // Получаем текущие данные сотрудника
+                const employee = await (await fetch(`/api/employees/${currentUser.id}`)).json();
+
+                // Создаем объект с данными
+                const updateData = {
+                    name: document.getElementById('name').value.trim(),
+                    age: age,
+                    experience: experience,
+                    phonenumber: document.getElementById('phonenumber').value.trim(),
+                    login: document.getElementById('login').value.trim(),
+                    serviceids: employee.Services ? employee.Services.map(s => s.id) : [],
+                    professionids: employee.Professions ? employee.Professions.map(p => p.id) : []
+                };
+
+                // Добавляем пароль, если он был введен
+                const password = document.getElementById('password').value;
+                if (password) {
+                    updateData.password = password;
+                }
+
+                // Если есть новое фото, добавляем его отдельно
+                const photoInput = document.getElementById('photoInput');
+                if (photoInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = async function() {
+                        // Получаем base64 строку фото, убирая prefix "data:image/...;base64,"
+                        const base64String = reader.result.split(',')[1];
+                        updateData.photoavatar = base64String;
+
+                        // Отправляем данные на сервер
+                        await sendUpdateRequest(currentUser.id, updateData);
+                    };
+                    reader.readAsDataURL(photoInput.files[0]);
+                } else {
+                    // Если нет нового фото, просто отправляем данные
+                    await sendUpdateRequest(currentUser.id, updateData);
+                }
+            } catch (error) {
+                alert('Ошибка при обновлении профиля: ' + error.message);
+            }
+        });
+
+        // Функция для отправки запроса на обновление
+        async function sendUpdateRequest(employeeId, data) {
+            try {
+                const response = await fetch(`/api/employees/${employeeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Профиль успешно обновлен');
+                    window.location.href = '/employee';
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert('Ошибка при обновлении профиля: ' + error.message);
+            }
+        }
+
+        // Обработчик выхода
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>

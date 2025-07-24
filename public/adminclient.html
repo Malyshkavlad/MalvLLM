@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление клиентами</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .success-message {
+            display: none;
+            margin-top: 20px;
+        }
+        .error-message {
+            display: none;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Сервисный центр</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminemployee">Сотрудники</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminservice">Услуги</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminprof">Профессии</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/adminclient">Клиенты</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminschedule">Расписание</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Выйти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container form-container">
+        <h2 class="mb-4">Добавление нового клиента</h2>
+
+        <!-- Сообщения об успехе/ошибке -->
+        <div class="alert alert-success success-message" id="successMessage">
+            Клиент успешно добавлен!
+        </div>
+        <div class="alert alert-danger error-message" id="errorMessage"></div>
+
+        <!-- Форма добавления клиента -->
+        <form id="clientForm" class="needs-validation" novalidate>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="name" class="form-label">ФИО клиента*</label>
+                    <input type="text" class="form-control" id="name" required>
+                    <div class="invalid-feedback">
+                        Пожалуйста, введите ФИО клиента
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="phonenumber" class="form-label">Номер телефона*</label>
+                    <input type="tel" class="form-control" id="phonenumber" required pattern="^\+?[1-9]\d{10,11}$" placeholder="+7XXXXXXXXXX">
+                    <div class="invalid-feedback">
+                        Введите корректный номер телефона
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="feature" class="form-label">Особенности</label>
+                    <textarea class="form-control" id="feature" rows="3"></textarea>
+                </div>
+            </div>
+
+            <h4 class="mb-3 mt-4">Информация о записи</h4>
+
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label for="service" class="form-label">Выберите услугу*</label>
+                    <select class="form-select" id="service" required>
+                        <option value="" selected disabled>Выберите услугу</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Пожалуйста, выберите услугу
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="employeeContainer" style="display: none;">
+                <div class="col-md-12 mb-3">
+                    <label for="employee" class="form-label">Выберите сотрудника*</label>
+                    <select class="form-select" id="employee" required>
+                        <option value="" selected disabled>Выберите сотрудника</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Пожалуйста, выберите сотрудника
+                    </div>
+                </div>
+            </div>
+
+            <div class="row" id="dateTimeContainer" style="display: none;">
+                <div class="col-md-6 mb-3">
+                    <label for="date" class="form-label">Дата*</label>
+                    <input type="date" class="form-control" id="date" required>
+                    <div class="invalid-feedback">
+                        Пожалуйста, выберите дату
+                    </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="time" class="form-label">Время*</label>
+                    <select class="form-select" id="time" required>
+                        <option value="" selected disabled>Выберите время</option>
+                    </select>
+                    <div class="invalid-feedback">
+                        Пожалуйста, выберите время
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="/admin" class="btn btn-secondary">Назад</a>
+                <button type="submit" class="btn btn-primary">Добавить запись</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверка авторизации
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || currentUser.role !== 1) {
+                window.location.href = '/';
+                return;
+            }
+
+            document.getElementById('logout').addEventListener('click', function() {
+                localStorage.removeItem('currentUser');
+                window.location.href = '/';
+            });
+
+            // Загрузка услуг при загрузке страницы
+            fetchServices();
+            
+            // Обработчик изменения выбранной услуги
+            document.getElementById('service').addEventListener('change', function() {
+                const serviceId = this.value;
+                const employeeContainer = document.getElementById('employeeContainer');
+                const dateTimeContainer = document.getElementById('dateTimeContainer');
+                
+                if (serviceId) {
+                    fetchEmployeesByService(serviceId);
+                    employeeContainer.style.display = 'block';
+                    this.classList.add('is-valid');
+                } else {
+                    employeeContainer.style.display = 'none';
+                    dateTimeContainer.style.display = 'none';
+                    this.classList.remove('is-valid');
+                }
+            });
+            
+            // Обработчик изменения выбранного сотрудника
+            document.getElementById('employee').addEventListener('change', function() {
+                const employeeId = this.value;
+                const dateTimeContainer = document.getElementById('dateTimeContainer');
+                
+                if (employeeId) {
+                    dateTimeContainer.style.display = 'block';
+                    this.classList.add('is-valid');
+                    
+                    // Устанавливаем минимальную дату - сегодня
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('date').min = today;
+                } else {
+                    dateTimeContainer.style.display = 'none';
+                    this.classList.remove('is-valid');
+                }
+            });
+
+            // Добавляем обработчики для проверки валидности полей при вводе
+            document.querySelectorAll('.form-control, .form-select').forEach(input => {
+                input.addEventListener('input', function() {
+                    if (this.checkValidity()) {
+                        this.classList.remove('is-invalid');
+                        this.classList.add('is-valid');
+                    } else {
+                        this.classList.remove('is-valid');
+                        this.classList.add('is-invalid');
+                    }
+                });
+            });
+            
+            // Обработчик отправки формы
+            document.getElementById('clientForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!this.checkValidity()) {
+                    e.stopPropagation();
+                    this.classList.add('was-validated');
+                    return;
+                }
+
+                try {
+                    // Создаем данные клиента
+                    const clientData = {
+                        name: document.getElementById('name').value,
+                        phonenumber: document.getElementById('phonenumber').value,
+                        feature: document.getElementById('feature').value
+                    };
+
+                    // Отправляем запрос на создание клиента
+                    const clientResponse = await fetch('/api/clients/add', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(clientData)
+                    });
+
+                    const clientResult = await clientResponse.json();
+                    
+                    if (clientResult.success) {
+                        // После создания клиента, создаем запись о приеме
+                        const appointmentData = {
+                            clientid: clientResult.client.id,
+                            serviceid: document.getElementById('service').value,
+                            employeeid: document.getElementById('employee').value,
+                            date: document.getElementById('date').value,
+                            time: document.getElementById('time').value
+                        };
+                        
+                        const appointmentResponse = await fetch('/api/appointments/add', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(appointmentData)
+                        });
+
+                        const appointmentResult = await appointmentResponse.json();
+                        
+                        if (appointmentResult.success) {
+                            document.getElementById('successMessage').style.display = 'block';
+                            document.getElementById('errorMessage').style.display = 'none';
+                            this.reset();
+                            this.classList.remove('was-validated');
+                            
+                            // Задержка перед перенаправлением
+                            setTimeout(() => {
+                                window.location.href = '/admin';
+                            }, 1500);
+                        } else {
+                            throw new Error(appointmentResult.message || 'Ошибка при создании записи');
+                        }
+                    } else {
+                        throw new Error(clientResult.message || 'Ошибка при добавлении клиента');
+                    }
+                } catch (error) {
+                    document.getElementById('errorMessage').textContent = error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    document.getElementById('successMessage').style.display = 'none';
+                }
+            });
+        });
+
+        // Функция для загрузки услуг
+        function fetchServices() {
+            fetch('/api/services')
+                .then(response => response.json())
+                .then(services => {
+                    const serviceSelect = document.getElementById('service');
+                    services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service.id;
+                        option.textContent = `${service.name} - ${service.price} руб.`;
+                        serviceSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке услуг:', error);
+                    document.getElementById('errorMessage').textContent = 'Ошибка при загрузке услуг';
+                    document.getElementById('errorMessage').style.display = 'block';
+                });
+        }
+
+        // Функция для загрузки сотрудников по выбранной услуге
+        function fetchEmployeesByService(serviceId) {
+            fetch('/api/employees')
+                .then(response => response.json())
+                .then(employees => {
+                    const employeeSelect = document.getElementById('employee');
+                    employeeSelect.innerHTML = '<option value="" selected disabled>Выберите сотрудника</option>';
+                    
+                    employees.forEach(employee => {
+                        const hasService = employee.Services.some(service => service.id == serviceId);
+                        
+                        if (hasService) {
+                            const option = document.createElement('option');
+                            option.value = employee.id;
+                            option.textContent = `${employee.name} (опыт: ${employee.experience} лет)`;
+                            employeeSelect.appendChild(option);
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Ошибка при загрузке сотрудников:', error);
+                    document.getElementById('errorMessage').textContent = 'Ошибка при загрузке сотрудников';
+                    document.getElementById('errorMessage').style.display = 'block';
+                });
+        }
+
+        function generateTimeSlots(bookedSlots = []) {
+            const timeSelect = document.getElementById('time');
+            timeSelect.innerHTML = '<option value="" selected disabled>Выберите время</option>';
+            
+            // Generate time slots from 10:00 to 18:00
+            for (let hour = 10; hour <= 18; hour++) {
+                const timeValue = `${hour.toString().padStart(2, '0')}:00`;
+                
+                // Добавляем временной слот только если он не занят
+                if (!bookedSlots.includes(timeValue)) {
+                    const option = document.createElement('option');
+                    option.value = timeValue;
+                    option.textContent = timeValue;
+                    timeSelect.appendChild(option);
+                }
+            }
+        }
+
+        document.getElementById('date').addEventListener('change', async function() {
+            const selectedDate = new Date(this.value);
+            const dayOfWeek = selectedDate.getDay();
+            
+            // Check if it's a weekend (0 = Sunday, 6 = Saturday)
+            if (dayOfWeek === 0 || dayOfWeek === 6) {
+                alert('Пожалуйста, выберите рабочий день (Пн-Пт)');
+                this.value = '';
+                return;
+            }
+
+            const employeeId = document.getElementById('employee').value;
+            
+            try {
+                const response = await fetch(`/api/appointments/check-availability?date=${this.value}&employeeId=${employeeId}`);
+                const bookedSlots = await response.json();
+                
+                // Генерируем временные слоты с учетом занятых
+                generateTimeSlots(bookedSlots);
+            } catch (error) {
+                console.error('Ошибка при проверке доступности времени:', error);
+            }
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

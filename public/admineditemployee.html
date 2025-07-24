@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование сотрудника</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-label.required::after {
+            content: "*";
+            color: red;
+            margin-left: 4px;
+        }
+        #previewImage {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Сервисный центр</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/adminemployee">Сотрудники</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminservice">Услуги</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminclient">Клиенты</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminschedule">Расписание</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Выйти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Редактирование сотрудника</h5>
+            </div>
+            <div class="card-body">
+                <div id="successMessage" class="alert alert-success" style="display: none;">
+                    Сотрудник успешно обновлен!
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <form id="editEmployeeForm" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label required">ФИО</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">Пожалуйста, введите ФИО</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="age" class="form-label required">Возраст</label>
+                            <input type="number" class="form-control" id="age" name="age" required min="18" max="100">
+                            <div class="invalid-feedback">Возраст должен быть от 18 до 100 лет</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="experience" class="form-label required">Опыт работы (лет)</label>
+                            <input type="number" class="form-control" id="experience" name="experience" required min="0" max="50">
+                            <div class="invalid-feedback">Опыт работы должен быть от 0 до 50 лет</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="phonenumber" class="form-label required">Телефон</label>
+                            <input type="tel" class="form-control" id="phonenumber" name="phonenumber" required pattern="^\+?[1-9]\d{10,11}$">
+                            <div class="invalid-feedback">Введите корректный номер телефона</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="login" class="form-label required">Логин</label>
+                            <input type="text" class="form-control" id="login" name="login" required>
+                            <div class="invalid-feedback">Пожалуйста, введите логин</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="password" class="form-label">Пароль (оставьте пустым, если не меняете)</label>
+                            <input type="password" class="form-control" id="password" name="password">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">Услуги</label>
+                            <div id="servicesCheckboxes" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Чекбоксы будут добавлены через JavaScript -->
+                            </div>
+                            <div class="invalid-feedback">Выберите хотя бы одну услугу</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="photoavatar" class="form-label">Фото</label>
+                            <input type="file" class="form-control" id="photoavatar" name="photoavatar" accept="image/*">
+                            <img id="previewImage" src="" alt="Предпросмотр фото" style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label required">Профессии</label>
+                            <div id="professionsCheckboxes" class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                <!-- Чекбоксы будут добавлены через JavaScript -->
+                            </div>
+                            <div class="invalid-feedback">Выберите хотя бы одну профессию</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        <a href="/admin" class="btn btn-secondary ms-2">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Получаем ID сотрудника из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const employeeId = urlParams.get('id');
+
+        if (!employeeId) {
+            window.location.href = '/admin';
+        }
+
+        // Загрузка данных сотрудника и услуг при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const [employeeResponse, servicesResponse, professionsResponse] = await Promise.all([
+                    fetch(`/api/employees/${employeeId}`),
+                    fetch('/api/services'),
+                    fetch('/api/professions')
+                ]);
+
+                if (!employeeResponse.ok) {
+                    throw new Error('Сотрудник не найден');
+                }
+
+                const employee = await employeeResponse.json();
+                const services = await servicesResponse.json();
+                const professions = await professionsResponse.json();
+
+                // Заполняем форму данными сотрудника
+                document.getElementById('name').value = employee.name;
+                document.getElementById('age').value = employee.age;
+                document.getElementById('experience').value = employee.experience;
+                document.getElementById('phonenumber').value = employee.phonenumber;
+                document.getElementById('login').value = employee.login;
+
+                // Заполняем список услуг
+                const servicesContainer = document.getElementById('servicesCheckboxes');
+                services.forEach(service => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.className = 'form-check-input';
+                    input.id = `service-${service.id}`;
+                    input.value = service.id;
+                    input.name = 'serviceids';
+                    input.checked = employee.Services.some(s => s.id === service.id);
+                    
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label';
+                    label.htmlFor = `service-${service.id}`;
+                    label.textContent = `${service.name} (${service.price} руб.)`;
+                    
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    servicesContainer.appendChild(div);
+                });
+
+                // Заполняем список профессий
+                const professionsContainer = document.getElementById('professionsCheckboxes');
+                professions.forEach(profession => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.className = 'form-check-input';
+                    input.id = `profession-${profession.id}`;
+                    input.value = profession.id;
+                    input.name = 'professionids';
+                    input.checked = employee.Professions.some(p => p.id === profession.id);
+                    
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label';
+                    label.htmlFor = `profession-${profession.id}`;
+                    label.textContent = `${profession.name}`;
+                    
+                    const description = document.createElement('small');
+                    description.className = 'form-text text-muted d-block';
+                    description.textContent = profession.description;
+                    
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    div.appendChild(description);
+                    professionsContainer.appendChild(div);
+                });
+
+                // Показываем текущее фото
+                if (employee.photoavatar) {
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = `data:image/jpeg;base64,${employee.photoavatar}`;
+                    previewImage.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                document.getElementById('errorMessage').textContent = 'Ошибка загрузки данных сотрудника';
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        });
+
+        // Предпросмотр фото
+        document.getElementById('photoavatar').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImage = document.getElementById('previewImage');
+                    previewImage.src = e.target.result;
+                    previewImage.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Обработка отправки формы
+        document.getElementById('editEmployeeForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!this.checkValidity()) {
+                e.stopPropagation();
+                this.classList.add('was-validated');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('age', document.getElementById('age').value);
+            formData.append('experience', document.getElementById('experience').value);
+            formData.append('phonenumber', document.getElementById('phonenumber').value);
+            formData.append('login', document.getElementById('login').value);
+
+            // Добавляем пароль только если он был введен
+            const password = document.getElementById('password').value;
+            if (password) {
+                formData.append('password', password);
+            }
+
+            // Получаем выбранные услуги
+            const checkboxes = document.querySelectorAll('input[name="serviceids"]:checked');
+            const selectedServices = Array.from(checkboxes).map(checkbox => checkbox.value);
+            selectedServices.forEach(serviceid => {
+                formData.append('serviceids', serviceid);
+            });
+
+            // Получаем выбранные профессии
+            const professionCheckboxes = document.querySelectorAll('input[name="professionids"]:checked');
+            const selectedProfessions = Array.from(professionCheckboxes).map(checkbox => checkbox.value);
+            selectedProfessions.forEach(professionid => {
+                formData.append('professionids', professionid);
+            });
+
+            // Добавляем фото, если оно было выбрано
+            const photoFile = document.getElementById('photoavatar').files[0];
+            if (photoFile) {
+                try {
+                    // Проверяем размер и формат файла
+                    const maxSize = 5 * 1024 * 1024; // 5MB
+                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+                    
+                    if (photoFile.size > maxSize) {
+                        throw new Error('Размер файла не должен превышать 5MB');
+                    }
+                    if (!allowedTypes.includes(photoFile.type)) {
+                        throw new Error('Допустимые форматы файлов: JPEG, PNG, GIF');
+                    }
+                    
+                    formData.append('photoavatar', photoFile);
+                } catch (error) {
+                    document.getElementById('errorMessage').textContent = error.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    return;
+                }
+            }
+
+            try {
+                const response = await fetch(`/api/employees/${employeeId}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                document.getElementById('errorMessage').textContent = error.message || 'Ошибка при обновлении сотрудника';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        });
+
+        // Обработчик выхода
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>

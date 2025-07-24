@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Расписание услуг</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <!-- Добавьте после Bootstrap CSS -->
+    <style>
+        .form-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .schedule-controls {
+            margin-bottom: 20px;
+        }
+        .schedule-table th {
+            background-color: #f8f9fa;
+        }
+        .appointment-card {
+            margin-bottom: 10px;
+            border-left: 4px solid #0d6efd;
+        }
+        .error-message {
+            display: none;
+            margin-top: 20px;
+        }
+        .date-header {
+            background-color: #e9ecef;
+            padding: 10px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Сервисный центр</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminemployee">Сотрудники</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminservice">Услуги</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminprof">Профессии</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminclient">Клиенты</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/adminschedule">Расписание</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Выйти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container form-container">
+        <h2 class="mb-4">Расписание услуг</h2>
+
+        <!-- Сообщение об ошибке -->
+        <div class="alert alert-danger error-message" id="errorMessage"></div>
+
+        <!-- Элементы управления расписанием -->
+        <div class="schedule-controls">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="dateFilter" class="form-label">Фильтр по дате</label>
+                    <input type="date" class="form-control" id="dateFilter">
+                </div>
+                <div class="col-md-4">
+                    <label for="employeeFilter" class="form-label">Фильтр по сотруднику</label>
+                    <select class="form-select" id="employeeFilter">
+                        <option value="">Все сотрудники</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="serviceFilter" class="form-label">Фильтр по услуге</label>
+                    <select class="form-select" id="serviceFilter">
+                        <option value="">Все услуги</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Контейнер для расписания -->
+        <div id="scheduleContainer">
+            <!-- Записи будут добавлены через JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Проверка авторизации
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || currentUser.role !== 1) {
+                window.location.href = '/';
+                return;
+            }
+
+            // Обработчик выхода
+            document.getElementById('logout').addEventListener('click', function() {
+                localStorage.removeItem('currentUser');
+                window.location.href = '/';
+            });
+
+            // Загрузка данных при загрузке страницы
+            loadSchedule();
+            loadEmployees();
+            loadServices();
+
+            // Обработчики фильтров
+            document.getElementById('dateFilter').addEventListener('change', filterSchedule);
+            document.getElementById('employeeFilter').addEventListener('change', filterSchedule);
+            document.getElementById('serviceFilter').addEventListener('change', filterSchedule);
+        });
+
+        // Загрузка всех записей
+        async function loadSchedule() {
+            try {
+                const response = await fetch('/api/appointments/all');
+                const appointments = await response.json();
+                displaySchedule(appointments);
+            } catch (error) {
+                showError('Ошибка при загрузке расписания');
+            }
+        }
+
+        // Загрузка списка сотрудников для фильтра
+        async function loadEmployees() {
+            try {
+                const response = await fetch('/api/employees');
+                const employees = await response.json();
+                const select = document.getElementById('employeeFilter');
+                
+                employees.forEach(employee => {
+                    const option = document.createElement('option');
+                    option.value = employee.id;
+                    option.textContent = employee.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                showError('Ошибка при загрузке списка сотрудников');
+            }
+        }
+
+        // Загрузка списка услуг для фильтра
+        async function loadServices() {
+            try {
+                const response = await fetch('/api/services');
+                const services = await response.json();
+                const select = document.getElementById('serviceFilter');
+                
+                services.forEach(service => {
+                    const option = document.createElement('option');
+                    option.value = service.id;
+                    option.textContent = service.name;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                showError('Ошибка при загрузке списка услуг');
+            }
+        }
+
+        // Отображение расписания
+        function displaySchedule(appointments) {
+            const container = document.getElementById('scheduleContainer');
+            container.innerHTML = '';
+
+            // Группировка записей по датам
+            const groupedAppointments = groupAppointmentsByDate(appointments);
+
+            // Отображение записей по датам
+            Object.entries(groupedAppointments).forEach(([date, dayAppointments]) => {
+                const dateHeader = document.createElement('div');
+                dateHeader.className = 'date-header';
+                dateHeader.textContent = formatDate(date);
+                container.appendChild(dateHeader);
+
+                dayAppointments.forEach(appointment => {
+                    const card = createAppointmentCard(appointment);
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        // Создание карточки записи
+        function createAppointmentCard(appointment) {
+            const card = document.createElement('div');
+            card.className = 'card appointment-card';
+            card.innerHTML = `
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-2">
+                            <strong>Время:</strong> ${appointment.time}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Сотрудник:</strong> ${appointment.Employee.name}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Клиент:</strong> ${appointment.Client.name}
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Услуга:</strong> ${appointment.Service.name}
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteAppointment(${appointment.id}, '${appointment.Client.name}')">
+                                <i class="bi bi-trash"></i> Удалить
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            return card;
+        }
+
+        // Группировка записей по датам
+        function groupAppointmentsByDate(appointments) {
+            return appointments.reduce((groups, appointment) => {
+                const date = appointment.date;
+                if (!groups[date]) {
+                    groups[date] = [];
+                }
+                groups[date].push(appointment);
+                return groups;
+            }, {});
+        }
+
+        // Форматирование даты
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('ru-RU', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        // Фильтрация расписания
+        async function filterSchedule() {
+            try {
+                const date = document.getElementById('dateFilter').value;
+                const employeeId = document.getElementById('employeeFilter').value;
+                const serviceId = document.getElementById('serviceFilter').value;
+
+                const response = await fetch('/api/appointments/all');
+                let appointments = await response.json();
+
+                // Применение фильтров
+                if (date) {
+                    appointments = appointments.filter(app => app.date === date);
+                }
+                if (employeeId) {
+                    appointments = appointments.filter(app => app.employeeid === parseInt(employeeId));
+                }
+                if (serviceId) {
+                    appointments = appointments.filter(app => app.serviceid === parseInt(serviceId));
+                }
+
+                displaySchedule(appointments);
+            } catch (error) {
+                showError('Ошибка при фильтрации расписания');
+            }
+        }
+
+        // Добавьте эти новые функции
+        function confirmDeleteAppointment(appointmentId, clientName) {
+            if (confirm(`Вы действительно хотите удалить запись клиента "${clientName}"?`)) {
+                deleteAppointment(appointmentId);
+            }
+        }
+
+        async function deleteAppointment(appointmentId) {
+            try {
+                const response = await fetch(`/api/appointments/${appointmentId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Показываем уведомление об успехе
+                    alert('Запись успешно удалена');
+                    
+                    // Перезагружаем расписание
+                    loadSchedule();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                alert('Ошибка при удалении записи: ' + error.message);
+            }
+        }
+
+        // Отображение ошибки
+        function showError(message) {
+            const errorElement = document.getElementById('errorMessage');
+            errorElement.textContent = message;
+            errorElement.style.display = 'block';
+        }
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

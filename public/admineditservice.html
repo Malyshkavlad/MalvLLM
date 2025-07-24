@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование услуги</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .form-label.required::after {
+            content: "*";
+            color: red;
+            margin-left: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Сервисный центр</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin">Главная</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminemployee">Сотрудники</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/adminservice">Услуги</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminclient">Клиенты</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/adminschedule">Расписание</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" id="logout">Выйти</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Редактирование услуги</h5>
+            </div>
+            <div class="card-body">
+                <div id="successMessage" class="alert alert-success" style="display: none;">
+                    Услуга успешно обновлена!
+                </div>
+                <div id="errorMessage" class="alert alert-danger" style="display: none;"></div>
+
+                <form id="editServiceForm" class="needs-validation" novalidate>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="name" class="form-label required">Название услуги</label>
+                            <input type="text" class="form-control" id="name" name="name" required>
+                            <div class="invalid-feedback">Пожалуйста, введите название услуги</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="price" class="form-label required">Стоимость (руб.)</label>
+                            <input type="number" class="form-control" id="price" name="price" required min="0">
+                            <div class="invalid-feedback">Введите корректную стоимость</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="description" class="form-label required">Описание</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                            <div class="invalid-feedback">Пожалуйста, введите описание услуги</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        <a href="/admin" class="btn btn-secondary ms-2">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Получаем ID услуги из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const serviceId = urlParams.get('id');
+
+        if (!serviceId) {
+            window.location.href = '/admin';
+        }
+
+        // Загрузка данных услуги при загрузке страницы
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                const response = await fetch(`/api/services/${serviceId}`);
+
+                if (!response.ok) {
+                    throw new Error('Услуга не найдена');
+                }
+
+                const service = await response.json();
+
+                // Заполняем форму данными услуги
+                document.getElementById('name').value = service.name;
+                document.getElementById('price').value = service.price;
+                document.getElementById('description').value = service.description;
+
+            } catch (error) {
+                console.error('Ошибка загрузки данных:', error);
+                document.getElementById('errorMessage').textContent = 'Ошибка загрузки данных услуги';
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        });
+
+        // Обработка отправки формы
+        document.getElementById('editServiceForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            if (!this.checkValidity()) {
+                e.stopPropagation();
+                this.classList.add('was-validated');
+                return;
+            }
+
+            const formData = new FormData(this);
+            const serviceData = {
+                name: formData.get('name'),
+                price: parseInt(formData.get('price')),
+                description: formData.get('description')
+            };
+
+            try {
+                const response = await fetch(`/api/services/${serviceId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(serviceData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    document.getElementById('successMessage').style.display = 'block';
+                    document.getElementById('errorMessage').style.display = 'none';
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 2000);
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                document.getElementById('errorMessage').textContent = error.message || 'Ошибка при обновлении услуги';
+                document.getElementById('errorMessage').style.display = 'block';
+                document.getElementById('successMessage').style.display = 'none';
+            }
+        });
+
+        // Обработчик выхода
+        document.getElementById('logout').addEventListener('click', function(e) {
+            e.preventDefault();
+            localStorage.removeItem('currentUser');
+            window.location.href = '/';
+        });
+    </script>
+</body>
+</html>
